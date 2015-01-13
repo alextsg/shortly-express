@@ -43,14 +43,13 @@ app.post('/signup', function (req, res) {
       // set the cookie
     } else {
       var user = new User(req.body);
-      user.save().then(function() {
-        // set the cookie and redirect to home page
-        res.cookie('authenticated', user);
-        res.redirect(200, 'index');
-      });
+      user.userHash
     }
   });
 });
+
+// res.cookie('authenticated', data.get('salt'));
+// res.redirect(200, 'index');
 
 app.use(function (req, res, next) {
   if (req.cookies.authenticated) {
