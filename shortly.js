@@ -2,6 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
 
 
 var db = require('./app/config');
@@ -18,30 +19,63 @@ app.set('view engine', 'ejs');
 app.use(partials());
 // Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
+app.use(cookieParser());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.get('/login', function (req, res) {
+  res.render('login');
+});
 
-app.get('/', 
-function(req, res) {
+app.post('/login', function (req, res) {
+
+})
+
+app.get('/signup', function (req, res) {
+  res.render('signup');
+});
+
+app.post('/signup', function (req, res) {
+  new User(req.body).fetch().then(function(found) {
+    if (found) {
+      console.log('user found');
+      // set the cookie
+    } else {
+      var user = new User(req.body);
+      user.save().then(function() {
+        // set the cookie and redirect to home page
+        res.cookie('authenticated', user);
+        res.redirect(200, 'index');
+      });
+    }
+  });
+});
+
+app.use(function (req, res, next) {
+  if (req.cookies.authenticated) {
+    next(); // let them thru
+  } else {
+    res.redirect(200, 'login');
+  }
+});
+
+app.get('/', function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
-function(req, res) {
+app.get('/create', function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
-function(req, res) {
+
+app.get('/links', function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
-function(req, res) {
+app.post('/links', function(req, res) {
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
