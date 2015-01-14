@@ -63,11 +63,12 @@ describe('', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
-    xbeforeEach(function(done){      // create a user that we can then log-in with
+    beforeEach(function(done){      // create a user that we can then log-in with
       new User({
           'username': 'Phillip',
           'password': 'Phillip'
       }).save().then(function(){
+        console.log('was saved');
         var options = {
           'method': 'POST',
           'followAllRedirects': true,
@@ -84,7 +85,7 @@ describe('', function() {
       });
     });
 
-    xit('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
+    it('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
       var options = {
         'method': 'POST',
         'uri': 'http://127.0.0.1:4568/links',

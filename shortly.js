@@ -1,4 +1,5 @@
 var express = require('express');
+var session = require('express-session');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
@@ -20,6 +21,10 @@ app.use(partials());
 // Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
 app.use(cookieParser());
+app.use(session({
+  secret:'123456',
+  resave: false
+}));
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
@@ -30,7 +35,26 @@ app.get('/login', function (req, res) {
 
 app.post('/login', function (req, res) {
 
-})
+  console.log('req.session', req.session);
+  var user = new User({username: req.body.username});
+  user.fetch().then(function(found) {
+    console.log('fetched');
+    if (found) {
+      user.userCheck(req.body.password, found.attributes.password).then(function (result) {
+        if (result) {
+          req.session.user = found;
+          res.cookie('authenticated', found.attributes.salt);
+          res.redirect(200, 'index');
+        } else {
+          console.log("password didn't match");
+        }
+      });
+    }
+    else {
+      res.redirect('signup');
+    }
+  });
+});
 
 app.get('/signup', function (req, res) {
   res.render('signup');
@@ -39,23 +63,25 @@ app.get('/signup', function (req, res) {
 app.post('/signup', function (req, res) {
   new User(req.body).fetch().then(function(found) {
     if (found) {
-      console.log('user found');
-      // set the cookie
+      res.redirect(200, 'signup');
     } else {
       var user = new User(req.body);
-      user.userHash
+      user.userHash(req.body.password).then(function (attrs) {
+        user.set({'password': attrs.password, 'salt': attrs.salt});
+        user.save().then(function () {
+          res.cookie('authenticated', attrs.salt);
+          res.redirect(307, 'index');
+        });
+      });
     }
   });
 });
-
-// res.cookie('authenticated', data.get('salt'));
-// res.redirect(200, 'index');
 
 app.use(function (req, res, next) {
   if (req.cookies.authenticated) {
     next(); // let them thru
   } else {
-    res.redirect(200, 'login');
+    res.redirect('login');
   }
 });
 

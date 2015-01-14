@@ -7,25 +7,29 @@ var User = db.Model.extend({
   tableName: 'users',
   hasTimestamps: true,
 
-  userHash: function (userObj) {
+  userHash: function (password) {
+    var self = this;
     return new Promise(function (resolve, reject) {
       bcrypt.genSaltAsync(10).then(function (salt) {
-        bcrypt.hashAsync(userObj.password, salt, null).then(function (hash) {
-          resolve([hash, salt]);
+        console.log('hello self.password', password);
+        bcrypt.hashAsync(password, salt, null).then(function (hash) {
+          resolve({'password': hash, 'salt': salt});
         });
       });
     });
+  },
 
-    // bcrypt.genSaltAsync(10).then(function (salt) {
-    //   return salt;
-    // }).then(function (salt) {
-    //   bcrypt.hashAsync(userObj.password, salt, null).then(function (hash) {
-    //     self.set({'password': hash, 'salt': salt});
-    //     self.save();
-    //   });
-    // });
+  userCheck: function(password, dbpass) {
+    return new Promise(function (resolve, reject) {
+      bcrypt.compareAsync(password, dbpass).then(function (found) {
+        console.log('found in userCheck is', found);
+        if (found){
+          console.log('password correct', found);
+          resolve(true);
+        }
+      });
+    });
   }
-
 });
 
 module.exports = User;
